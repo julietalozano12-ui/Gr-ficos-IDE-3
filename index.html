@@ -3,286 +3,128 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pirámides de Población 2022 y 2010</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+<title>Evolución intercensal de la población</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    font-family: 'Segoe UI', Arial, sans-serif;
-    background: #f7f8fa;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 24px;
-    gap: 32px;
-  }
-
-  .card {
-    background: #fff;
-    border-radius: 12px;
-    box-shadow: 0 2px 16px rgba(0,0,0,0.08);
-    padding: 32px 36px 24px;
-    max-width: 760px;
-    width: 100%;
-  }
-
-  .titulo {
-    font-size: 1.25rem;
-    font-weight: 700;
-    color: #1a1a2e;
-    margin-bottom: 4px;
-  }
-
-  .subtitulo {
-    font-size: 0.85rem;
-    color: #888;
-    margin-bottom: 24px;
-  }
-
-  .leyenda {
-    display: flex;
-    gap: 24px;
-    margin-bottom: 16px;
-  }
-
-  .leyenda-item {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    font-size: 0.82rem;
-    color: #444;
-  }
-
-  .leyenda-color {
-    width: 14px;
-    height: 14px;
-    border-radius: 3px;
-  }
-
-  svg text { font-family: 'Segoe UI', Arial, sans-serif; }
-
-  .bar-mujeres { fill: #e07b8a; }
-  .bar-varones { fill: #5b9bd5; }
-  .bar-mujeres:hover { fill: #c45a6a; }
-  .bar-varones:hover { fill: #3a7dbb; }
-
-  .axis-center line,
-  .axis-center path { stroke: #ccc; }
-  .axis-center text { fill: #555; font-size: 11px; }
-
-  .axis-y text { fill: #555; font-size: 11px; }
-  .axis-y line, .axis-y path { display: none; }
-
-  .grid line { stroke: #eee; stroke-dasharray: 3,3; }
-  .grid path { display: none; }
-
-  .tooltip {
-    position: fixed;
-    background: #1a1a2e;
-    color: #fff;
-    padding: 7px 12px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.15s;
-    white-space: nowrap;
-    z-index: 100;
-  }
+*{box-sizing:border-box;margin:0;padding:0;}
+body{
+  font-family:'Segoe UI',Arial,sans-serif;
+  background:#f7f8fa;
+  padding:24px;
+}
+.card{
+  background:#fff;
+  border-radius:12px;
+  box-shadow:0 2px 16px rgba(0,0,0,.08);
+  padding:24px 28px;
+  max-width:760px;
+  width:100%;
+}
+.titulo{
+  font-size:1.25rem;
+  font-weight:700;
+  color:#1a1a2e;
+  margin-bottom:4px;
+}
+.subtitulo{
+  font-size:.85rem;
+  color:#888;
+  margin-bottom:18px;
+}
+.chart-container{
+  position:relative;
+  height:260px;
+}
 </style>
 </head>
 <body>
 
-<!-- Pirámide 2022 -->
 <div class="card">
-  <div class="titulo">Pirámide de Población — 2022</div>
-  <div class="subtitulo">Distribución por grupo de edad y género</div>
-  <div class="leyenda">
-    <div class="leyenda-item">
-      <div class="leyenda-color" style="background:#e07b8a"></div>Mujeres
-    </div>
-    <div class="leyenda-item">
-      <div class="leyenda-color" style="background:#5b9bd5"></div>Varones
-    </div>
-  </div>
-  <div id="chart2022"></div>
-</div>
+  <div class="titulo">Evolución intercensal de la población</div>
+  <div class="subtitulo">Población total por censo</div>
 
-<!-- Pirámide 2010 -->
-<div class="card">
-  <div class="titulo">Pirámide de Población — 2010</div>
-  <div class="subtitulo">Distribución por grupo de edad y género</div>
-  <div class="leyenda">
-    <div class="leyenda-item">
-      <div class="leyenda-color" style="background:#e07b8a"></div>Mujeres
-    </div>
-    <div class="leyenda-item">
-      <div class="leyenda-color" style="background:#5b9bd5"></div>Varones
-    </div>
+  <div class="chart-container">
+    <canvas id="grafico"></canvas>
   </div>
-  <div id="chart2010"></div>
 </div>
-
-<div class="tooltip" id="tooltip"></div>
 
 <script>
-const data2022 = [
-  {edad: "80+",     mujeres: 3804, varones: 1660},
-  {edad: "75 a 79", mujeres: 2460, varones: 1544},
-  {edad: "70 a 74", mujeres: 3039, varones: 2124},
-  {edad: "65 a 69", mujeres: 3256, varones: 2462},
-  {edad: "60 a 64", mujeres: 3506, varones: 2754},
-  {edad: "55 a 59", mujeres: 3143, varones: 2677},
-  {edad: "50 a 54", mujeres: 3456, varones: 3126},
-  {edad: "45 a 49", mujeres: 4006, varones: 3571},
-  {edad: "40 a 44", mujeres: 4639, varones: 4424},
-  {edad: "35 a 39", mujeres: 4751, varones: 4929},
-  {edad: "30 a 34", mujeres: 5483, varones: 5763},
-  {edad: "25 a 29", mujeres: 5229, varones: 5303},
-  {edad: "20 a 24", mujeres: 4545, varones: 4579},
-  {edad: "15 a 19", mujeres: 3961, varones: 3837},
-  {edad: "10 a 14", mujeres: 4028, varones: 4027},
-  {edad: "05 a 09", mujeres: 4148, varones: 4189},
-  {edad: "00 a 04", mujeres: 3355, varones: 3371}
-];
+const valores=[121620,110993,115041,127160];
 
-const data2010 = [
-  {edad: "80+",      mujeres: 3497, varones: 1614},
-  {edad: "75 a 79",   mujeres: 2179, varones: 1245},
-  {edad: "70 a 74",   mujeres: 2245, varones: 1492},
-  {edad: "65 a 69",   mujeres: 2804, varones: 1990},
-  {edad: "60 a 64",   mujeres: 3298, varones: 2467},
-  {edad: "55 a 59",   mujeres: 3456, varones: 2786},
-  {edad: "50 a 54",   mujeres: 3399, varones: 2914},
-  {edad: "45 a 49",   mujeres: 3260, varones: 2705},
-  {edad: "40 a 44",   mujeres: 3192, varones: 2885},
-  {edad: "35 a 39",   mujeres: 3798, varones: 3755},
-  {edad: "30 a 34",   mujeres: 4777, varones: 4684},
-  {edad: "25 a 29",   mujeres: 5093, varones: 5366},
-  {edad: "20 a 24",   mujeres: 5457, varones: 5644},
-  {edad: "15 a 19",   mujeres: 4146, varones: 4032},
-  {edad: "10 a 14",   mujeres: 3379, varones: 3395},
-  {edad: "05 a 09",   mujeres: 3189, varones: 3206},
-  {edad: "0 a 4",     mujeres: 3814, varones: 3878}
-];
+const labelsPlugin={
+ id:'labelsPlugin',
+ afterDatasetsDraw(chart){
+   const {ctx}=chart;
+   const meta=chart.getDatasetMeta(0);
 
-const tooltip = d3.select("#tooltip");
+   meta.data.forEach((point,i)=>{
+      ctx.save();
+      ctx.fillStyle='#666';
+      ctx.font='12px Segoe UI';
+      ctx.textAlign='center';
+      ctx.fillText(
+        valores[i].toLocaleString('es-AR'),
+        point.x,
+        point.y-12
+      );
+      ctx.restore();
+   });
+ }
+};
 
-function showTip(event, label, val) {
-  tooltip
-    .style("opacity", 1)
-    .html(`<strong>${label}</strong>: ${val.toLocaleString("es-AR")} personas`)
-    .style("left", (event.clientX + 12) + "px")
-    .style("top", (event.clientY - 28) + "px");
-}
-function hideTip() { tooltip.style("opacity", 0); }
-
-function drawPyramid(containerId, data) {
-  const margin = { top: 10, right: 40, bottom: 30, left: 60 };
-  const totalWidth = Math.min(700, window.innerWidth - 80);
-  const width = totalWidth - margin.left - margin.right;
-  const barH = 20;
-  const gap = 4;
-  const height = data.length * (barH + gap);
-
-  const svg = d3.select("#" + containerId)
-    .append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-    .append("g")
-    .attr("transform", `translate(${margin.left},${margin.top})`);
-
-  const maxVal = d3.max(data, d => Math.max(d.mujeres, d.varones));
-  const halfW = width / 2;
-
-  const xScale = d3.scaleLinear()
-    .domain([0, maxVal * 1.05])
-    .range([0, halfW]);
-
-  const yScale = d3.scaleBand()
-    .domain(data.map(d => d.edad))
-    .range([0, height])
-    .paddingInner(0.15);
-
-  // Grid lines
-  svg.append("g")
-    .attr("class", "grid")
-    .attr("transform", `translate(${halfW}, 0)`)
-    .call(d3.axisBottom(xScale).ticks(4).tickSize(height).tickFormat(""))
-    .call(g => g.select(".domain").remove());
-
-  svg.append("g")
-    .attr("class", "grid")
-    .attr("transform", `translate(${halfW}, 0)`)
-    .call(d3.axisBottom(d3.scaleLinear().domain([0, maxVal * 1.05]).range([0, -halfW]))
-      .ticks(4).tickSize(height).tickFormat(""))
-    .call(g => g.select(".domain").remove());
-
-  // Barras mujeres (izquierda)
-  svg.selectAll(".bar-m")
-    .data(data)
-    .join("rect")
-    .attr("class", "bar-mujeres")
-    .attr("x", d => halfW - xScale(d.mujeres))
-    .attr("y", d => yScale(d.edad))
-    .attr("width", 0)
-    .attr("height", yScale.bandwidth())
-    .attr("rx", 3)
-    .on("mousemove", (e, d) => showTip(e, `Mujeres ${d.edad}`, d.mujeres))
-    .on("mouseleave", hideTip)
-    .transition().duration(600).delay((d, i) => i * 30)
-    .attr("width", d => xScale(d.mujeres));
-
-  // Barras varones (derecha)
-  svg.selectAll(".bar-v")
-    .data(data)
-    .join("rect")
-    .attr("class", "bar-varones")
-    .attr("x", halfW)
-    .attr("y", d => yScale(d.edad))
-    .attr("width", 0)
-    .attr("height", yScale.bandwidth())
-    .attr("rx", 3)
-    .on("mousemove", (e, d) => showTip(e, `Varones ${d.edad}`, d.varones))
-    .on("mouseleave", hideTip)
-    .transition().duration(600).delay((d, i) => i * 30)
-    .attr("width", d => xScale(d.varones));
-
-  // Línea central
-  svg.append("line")
-    .attr("x1", halfW).attr("x2", halfW)
-    .attr("y1", 0).attr("y2", height)
-    .attr("stroke", "#aaa").attr("stroke-width", 1.5);
-
-  // Eje Y
-  svg.append("g")
-    .attr("class", "axis-y")
-    .attr("transform", `translate(${halfW}, 0)`)
-    .call(d3.axisLeft(yScale).tickSize(0).tickPadding(6))
-    .selectAll("text")
-    .attr("text-anchor", "middle")
-    .attr("x", 0)
-    .attr("dy", "0.35em");
-
-  // Eje X izquierda (mujeres)
-  svg.append("g")
-    .attr("class", "axis-center")
-    .attr("transform", `translate(0, ${height})`)
-    .call(d3.axisBottom(
-      d3.scaleLinear().domain([maxVal * 1.05, 0]).range([0, halfW])
-    ).ticks(4).tickFormat(d => d === 0 ? "" : d3.format(",")(d)));
-
-  // Eje X derecha (varones)
-  svg.append("g")
-    .attr("class", "axis-center")
-    .attr("transform", `translate(${halfW}, ${height})`)
-    .call(d3.axisBottom(xScale).ticks(4)
-      .tickFormat(d => d === 0 ? "" : d3.format(",")(d)));
-}
-
-drawPyramid("chart2022", data2022);
-drawPyramid("chart2010", data2010);
+new Chart(document.getElementById('grafico'),{
+ type:'line',
+ data:{
+   labels:['1991','2001','2010','2022'],
+   datasets:[{
+      data:valores,
+      borderColor:'#4DAEB6',
+      backgroundColor:'rgba(77,174,182,0.35)',
+      fill:true,
+      tension:0.25,
+      borderWidth:3,
+      pointRadius:4,
+      pointHoverRadius:6
+   }]
+ },
+ options:{
+   responsive:true,
+   maintainAspectRatio:false,
+   plugins:{
+      legend:{display:false},
+      tooltip:{
+        callbacks:{
+          label:(ctx)=>ctx.raw.toLocaleString('es-AR')+' habitantes'
+        }
+      }
+   },
+   scales:{
+      y:{
+        title:{
+          display:true,
+          text:'Población total'
+        },
+        grid:{
+          borderDash:[3,3]
+        },
+        ticks:{
+          callback:(v)=>v.toLocaleString('es-AR')
+        }
+      },
+      x:{
+        title:{
+          display:true,
+          text:'Año'
+        },
+        grid:{
+          display:false
+        }
+      }
+   }
+ },
+ plugins:[labelsPlugin]
+});
 </script>
+
 </body>
 </html>
